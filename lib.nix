@@ -17,12 +17,15 @@ let
   callWithOverride = f:
     let callWithOverrideF = ext:
       let noExt = ext == null;
-          overrideArgs = args:
-            let result = if noExt then f args else (f args).override ext;
-             in result // { inherit overrideArgs; } # We assume that if (f args) has an override field for some args, then it has an override field for all args.
-                       // optional (result?override)
+          _uncall = args:
+            let fargs = f args;
+                result = if noExt then fargs else fargs.override ext;
+             in result // { inherit _uncall;
+                            overrideArgs = newArgs: _uncall (args // newArgs);
+                          }
+                       // optional (result?override) # We assume that if (f args) has an override field for some args, then it has an override field for all args.
                           { override = ext2: callWithOverrideF (if noExt then ext2 else extend ext ext2) args;};
-      in overrideArgs;
+      in _uncall;
     in callWithOverrideF;
 in {
   inherit asFunction compose extend fix fixDerivation;
