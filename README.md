@@ -1,5 +1,5 @@
 # nix-bootstrap
-A project to build nix-bootstrap tools from stage0-posix
+A project to build nixpkgs's bootstrap-tools from stage0-posix.
 
 Please clone with
 
