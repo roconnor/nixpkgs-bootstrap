@@ -1,0 +1,36 @@
+if match x${out} x; then
+else
+  prefix=${out}
+  PREFIX=${out}
+fi
+
+if match x${unpackPhasePath} x; then
+else
+  kaem --strict --verbose --file ${unpackPhasePath}
+fi
+
+if match x${pkg_name} x; then
+  cd ${name}
+else
+  cd ${pkg_name}
+fi
+
+if match x${patchPhasePath} x; then
+else
+  kaem --strict --verbose --file ${patchPhasePath}
+fi
+
+if match x${configurePhasePath} x; then
+else
+  kaem --strict --verbose --file ${configurePhasePath}
+fi
+
+if match x${buildPhasePath} x; then
+else
+  kaem --strict --verbose --file ${buildPhasePath}
+fi
+
+if match x${installPhasePath} x; then
+else
+  kaem --strict --verbose --file ${installPhasePath}
+fi

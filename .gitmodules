@@ -1,0 +1,18 @@
+[submodule "stage0/stage0-posix-x86"]
+	path = stage0/stage0-posix-x86
+	url = https://github.com/oriansj/stage0-posix-x86.git
+[submodule "stage0/M2libc"]
+	path = stage0/M2libc
+	url = https://github.com/oriansj/M2libc.git
+[submodule "stage0/M2-Planet"]
+	path = stage0/M2-Planet
+	url = https://github.com/oriansj/M2-Planet.git
+[submodule "stage0/mescc-tools"]
+	path = stage0/mescc-tools
+	url = https://github.com/oriansj/mescc-tools.git
+[submodule "stage0/M2-Mesoplanet"]
+	path = stage0/M2-Mesoplanet
+	url = https://github.com/oriansj/M2-Mesoplanet.git
+[submodule "stage0/mescc-tools-extra"]
+	path = stage0/mescc-tools-extra
+	url = https://github.com/oriansj/mescc-tools-extra.git
