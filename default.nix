@@ -22,4 +22,8 @@ in lib.fix
   coreutils = callPackage ./coreutils-5.0 {};
   heirloom-devtools = callPackage ./heirloom-devtools-070527 {};
   bash = callPackage ./bash-2.05b {};
+
+  stage1env = callPackage ./stage1env {};
+  tcc-pass2 = callPackage ./tinycc/0.9.27-pass2.nix { tcc = final."tcc-0.9.26"; };
+  musl = callPackage ./musl-1.1.24 { tcc = tcc-pass2; };
 })
