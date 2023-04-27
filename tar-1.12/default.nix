@@ -24,7 +24,7 @@ stage0env.override (final: prev: with final;
   makefile = mk/main.mk;
 
   installPhase = ''
-    bindir=''${out}
+    bindir=''${out}/bin
     mkdir -p ''${bindir}
     cp tar ''${bindir}
     chmod 755 ''${bindir}/tar
