@@ -16,6 +16,7 @@ in lib.fix
   make = callPackage ./make-3.82 {};
   gzip = callPackage ./gzip-1.2.4 {};
   tar = callPackage ./tar-1.12 {};
+  bzip2 = callPackage ./bzip2-1.0.8 {};
   sed = callPackage ./sed-4.0.9 {};
   patch = callPackage ./patch-2.5.9 {};
   coreutils = callPackage ./coreutils-5.0 {};
