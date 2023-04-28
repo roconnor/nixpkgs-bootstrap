@@ -318,7 +318,6 @@
     cp include/fcntl.h ''${incdir}/fcntl.h
     cp include/features.h ''${incdir}/features.h
     cp include/float.h ''${incdir}/float.h
-    cp include/getopt.h ''${incdir}/getopt.h
     cp include/grp.h ''${incdir}/grp.h
     cp include/inttypes.h ''${incdir}/inttypes.h
     cp include/libgen.h ''${incdir}/libgen.h

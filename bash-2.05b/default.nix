@@ -1,5 +1,6 @@
 { stage0env
 , tcc
+, libgetopt
 , make
 , patch
 , heirloom-devtools
@@ -37,6 +38,9 @@ stage0env.override (final: prev: with final;
   '';
 
   buildPhase = ''
+    C_INCLUDE_PATH=${libgetopt}/include:''${C_INCLUDE_PATH}
+    LIBRARY_PATH=${libgetopt}/lib:''${LIBRARY_PATH}
+
     # Unset the prefix to elimimate ''${prefix}/bin from bash's default search path.
     unset prefix
     make mkbuiltins

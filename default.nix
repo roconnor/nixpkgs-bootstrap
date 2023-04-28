@@ -13,6 +13,7 @@ in lib.fix
   mes = callPackage ./mes-0.24.2 {};
   "tcc-0.9.26" = callPackage ./tinycc/0.9.26.nix {};
   tcc-pass1 = callPackage ./tinycc/0.9.27-pass1.nix { CC = "${final."tcc-0.9.26"}/bin/tcc"; };
+  libgetopt = callPackage ./libgetopt { tcc = tcc-pass1; };
   make = callPackage ./make-3.82 { tcc = tcc-pass1; };
   gzip = callPackage ./gzip-1.2.4 { tcc = tcc-pass1; };
   tar = callPackage ./tar-1.12 { tcc = tcc-pass1; };

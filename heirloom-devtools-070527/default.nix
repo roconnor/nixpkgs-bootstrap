@@ -1,5 +1,6 @@
 { stage0env
 , tcc
+, libgetopt
 , make
 , patch
 , coreutils
@@ -28,6 +29,9 @@ stage0env.override (final: prev: with final;
 
   installPhase = ''
     mkdir -p ''${yacc}/bin ''${yacc}/lib
+
+    C_INCLUDE_PATH=${libgetopt}/include:''${C_INCLUDE_PATH}
+    LIBRARY_PATH=${libgetopt}/lib:''${LIBRARY_PATH}
 
     # Build yacc
     cd yacc

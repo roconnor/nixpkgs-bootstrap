@@ -30,11 +30,6 @@
     ./tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o crti.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crti.c
     ./tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o unified-libc.o unified-libc.c
     ./tcc -ar cr libc.a unified-libc.o
-
-    # Also recompile getopt, we don't need to do this during the boot* stages
-    # because nothing is linked against it
-    ./tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86  ${MES_PREFIX}/lib/posix/getopt.c
-    ./tcc -ar cr libgetopt.a getopt.o
   '';
 
   installPhase = ''
@@ -47,7 +42,6 @@
     cp crtn.o ''${libdir}/crtn.o
     cp crti.o ''${libdir}/crti.o
     cp libc.a ''${libdir}/libc.a
-    cp libgetopt.a ''${libdir}/libgetopt.a
     cp tcc ''${bindir}
     chmod 755 ''${bindir}/tcc
   '';
