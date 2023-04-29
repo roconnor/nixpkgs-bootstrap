@@ -48,6 +48,9 @@ lib.fixDerivation (final:
     ${make}/bin/make ${if final?makefile then "-f ${final.makefile}" else ""} install
   '';
 
+  outputHashMode = "recursive";
+  outputHashAlgo = "sha256";
+
   # Stage1 builds are mostly static binaries.
   # Please explicity override for those cases where it is not.
   allowedReferences = [];

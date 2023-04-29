@@ -31,10 +31,27 @@ in lib.fix
       { tcc = tcc-unwrapped;
         libc = callPackage ./musl-1.1.24 { inherit tcc; };
       };
-  tcc-musl = callPackage ./tinycc/wrapped.nix
+  tcc-musl1 = callPackage ./tinycc/wrapped.nix
     rec 
       { tcc = callPackage ./tinycc/0.9.27.nix { CC = "${tcc-musl0}/bin/tcc"; };
         libc = callPackage ./musl-1.1.24 { inherit tcc; };
       };
+  tcc-musl2 = callPackage ./tinycc/wrapped.nix
+    rec 
+      { tcc = callPackage ./tinycc/0.9.27.nix { CC = "${tcc-musl1}/bin/tcc"; };
+        # musl reaches its fixed point before tcc does.
+        libc = (callPackage ./musl-1.1.24 { inherit tcc; }).override (final: prev: { outputHash = "W9lfO0Th74Wq2lynD7iWLUymV+SA1OJ1h26cJCM/aY8="; });
+      };
+  tcc-musl3 = callPackage ./tinycc/wrapped.nix
+    rec 
+      { tcc = callPackage ./tinycc/0.9.27.nix { CC = "${tcc-musl2}/bin/tcc"; };
+        libc = (callPackage ./musl-1.1.24 { inherit tcc; }).override (final: prev: { outputHash = "W9lfO0Th74Wq2lynD7iWLUymV+SA1OJ1h26cJCM/aY8="; });
+      };
+  tcc-musl4 = callPackage ./tinycc/wrapped.nix
+    rec 
+      { tcc = callPackage ./tinycc/0.9.27.nix { CC = "${tcc-musl3}/bin/tcc"; };
+        libc = callPackage ./musl-1.1.24 { inherit tcc; };
+      };
+  tcc-musl = tcc-musl3; # This is the fixed point of tcc and musl.
   grep = callPackage ./grep-2.4 { tcc = tcc-musl; };
 })
