@@ -1,7 +1,11 @@
 set -e
 
 if [ -z "${prefix:-}" ]; then
-    prefix="$out";
+    export prefix="$out";
+fi
+
+if [ -z "${PREFIX:-}" ]; then
+    export PREFIX="$out";
 fi
 
 for curPhase in ${phases}; do

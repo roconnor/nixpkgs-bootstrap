@@ -36,4 +36,5 @@ in lib.fix
       { tcc = callPackage ./tinycc/0.9.27.nix { CC = "${tcc-musl0}/bin/tcc"; };
         libc = callPackage ./musl-1.1.24 { inherit tcc; };
       };
+  grep = callPackage ./grep-2.4 { tcc = tcc-musl; };
 })
