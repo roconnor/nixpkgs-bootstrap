@@ -53,5 +53,6 @@ in lib.fix
         libc = callPackage ./musl/1.1.24.nix { inherit tcc; };
       };
   tcc-musl = tcc-musl3; # This is the fixed point of tcc and musl.
+  m4 = callPackage ./m4/1.4.7.nix { tcc = tcc-musl; };
   grep = callPackage ./grep/2.4.nix { tcc = tcc-musl; };
 })
