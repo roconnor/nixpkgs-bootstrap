@@ -2,15 +2,14 @@ let
   asFunction = v: if builtins.isAttrs v then _: v
                   else if builtins.isPath v then import v
                   else v;
-  compose = f: g: x: f (g x);
   extend = classOrExt: extension: final: 
     let prev0 = classOrExt final;
         mkExtension = prev: prev // (extension final prev);
      in if builtins.isFunction prev0
-        then compose mkExtension prev0
+        then prevprev: mkExtension (prevprev // (prev0 prevprev))
         else mkExtension prev0;
-  fix = class0: let class = class0; final = class final; in final // { _class = class; override = compose fix (extend class); };
-  fixDerivation = class0: let class = class0; final = derivation (class final); in final // { _class = class; override = compose fixDerivation (extend class); };
+  fix = class0: let class = class0; final = class final; in final // { _class = class; override = ext: fix (extend class ext); };
+  fixDerivation = class0: let class = class0; final = derivation (class final); in final // { _class = class; override = ext: fixDerivation (extend class ext); };
 in fix
 (final: with final;
 let
@@ -23,12 +22,13 @@ let
              in result // { inherit _uncall;
                             overrideArgs = newArgs: _uncall (args // newArgs);
                           }
-                       // optional (result?override) # We assume that if (f args) has an override field for some args, then it has an override field for all args.
-                          { override = ext2: callWithOverrideF (if noExt then ext2 else extend ext ext2) args;};
+                       // (if result?override then # We assume that if (f args) has an override field for some args, then it has an override field for all args.
+                          { override = ext2: callWithOverrideF (if noExt then ext2 else extend ext ext2) args;}
+                          else {});
       in _uncall;
     in callWithOverrideF;
 in {
-  inherit asFunction compose extend fix fixDerivation;
+  inherit asFunction extend fix fixDerivation;
 
   call = f: callWithOverride f null;
 
@@ -36,5 +36,5 @@ in {
 
   callWithScope = scope: f: call (withScope scope f);
 
-  optional = b: s: if b then s else null;
+  optional = b: s: if b then s else "";
 })
