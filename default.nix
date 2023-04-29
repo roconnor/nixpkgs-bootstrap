@@ -25,6 +25,15 @@ in lib.fix
   bash = callPackage ./bash-2.05b { tcc = tcc-pass1; };
 
   stage1env = callPackage ./stage1env { tcc = tcc-pass1; };
-  tcc = callPackage ./tinycc/0.9.27.nix { CC = "${final."tcc-0.9.26"}/bin/tcc"; };
-  musl = callPackage ./musl-1.1.24 { };
+  tcc-unwrapped = callPackage ./tinycc/0.9.27.nix { CC = "${final."tcc-0.9.26"}/bin/tcc"; };
+  tcc-musl0 = callPackage ./tinycc/wrapped.nix
+    rec
+      { tcc = tcc-unwrapped;
+        libc = callPackage ./musl-1.1.24 { inherit tcc; };
+      };
+  tcc-musl = callPackage ./tinycc/wrapped.nix
+    rec 
+      { tcc = callPackage ./tinycc/0.9.27.nix { CC = "${tcc-musl0}/bin/tcc"; };
+        libc = callPackage ./musl-1.1.24 { inherit tcc; };
+      };
 })

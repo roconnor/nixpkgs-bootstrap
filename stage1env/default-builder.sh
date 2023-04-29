@@ -5,12 +5,12 @@ if [ -z "${prefix:-}" ]; then
 fi
 
 for curPhase in ${phases}; do
-  echo Starting $curPhase
   if [ -n "${!curPhase}" ]; then
+    echo Starting $curPhase
     eval "${!curPhase}"
-  fi
   
-  if [ "$curPhase" = unpackPhase ]; then
-    cd *
+    if [ "$curPhase" = unpackPhase ]; then
+      cd *
+    fi
   fi
 done

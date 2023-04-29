@@ -1,5 +1,4 @@
 { stage1env
-, mes
 , CC
 , ...
 }:
@@ -12,8 +11,6 @@ stage1env.override (final: prev: with final;
       sha256="de23af78fca90ce32dff2dd45b3432b2334740bb9bb7b05bf60fdbfc396ceb9c";
     };
 
-  incdir="${mes.dev}/include";
-
   patches = [
     patches/ignore-duplicate-symbols.patch
     patches/ignore-static-inside-array.patch
@@ -25,6 +22,8 @@ stage1env.override (final: prev: with final;
     touch config.h
   '';
 
+  TCC_SYSINCLUDEPATHS="{B}/include";
+
   buildPhase = ''
     # Compile
     ${CC} \
@@ -32,14 +31,13 @@ stage1env.override (final: prev: with final;
       -static \
       -o tcc \
       -D TCC_TARGET_I386=1 \
-      -D CONFIG_TCCDIR=\"''${out}/lib/tcc\" \
-      -D CONFIG_TCC_CRTPREFIX=\"''${out}/lib\" \
-      -D CONFIG_TCC_ELFINTERP=\"/mes/loader\" \
-      -D CONFIG_TCC_LIBPATHS=\"''${out}/lib:''${out}/lib/tcc\" \
-      -D CONFIG_TCC_SYSINCLUDEPATHS=\"${incdir}\" \
-      -D TCC_LIBGCC=\"''${out}/lib/libc.a\" \
+      -D CONFIG_TCCDIR=\"''${out}\" \
+      -D CONFIG_TCC_CRTPREFIX=\"{B}/lib\" \
+      -D CONFIG_TCC_ELFINTERP=\"-\" \
+      -D CONFIG_TCC_LIBPATHS=\"{B}/lib\" \
+      -D CONFIG_TCC_SYSINCLUDEPATHS=\"${TCC_SYSINCLUDEPATHS}\" \
+      -D TCC_LIBTCC1=\"lib/tcc/libtcc1.a\" \
       -D CONFIG_TCC_STATIC=1 \
-      -D CONFIG_USE_LIBGCC=1 \
       -D TCC_VERSION=\"0.9.27\" \
       -D ONE_SOURCE=1 \
       tcc.c
@@ -53,5 +51,5 @@ stage1env.override (final: prev: with final;
     install -D tcc "''${out}/bin/tcc"
   '';
 
-  # allowedReferences = [ "out" mes mes.dev ];
+  allowedReferences = [ "out" ];
 })

@@ -24,7 +24,7 @@ lib.fixDerivation (final:
 
   phases = [ "unpackPhase" "patchPhase" "configurePhase" "buildPhase" "installPhase" ];
  
-  unpackPhase = '' 
+  unpackPhase = lib.optional (final?src) '' 
     case "${final.src}" in
       *.tar.gz)
         ${gzip}/bin/gunzip -c ${final.src} | ${tar}/bin/tar xf -
@@ -50,5 +50,5 @@ lib.fixDerivation (final:
 
   # Stage1 builds are mostly static binaries.
   # Please explicity override for those cases where it is not.
-  # allowedReferences = [];
+  allowedReferences = [];
 })

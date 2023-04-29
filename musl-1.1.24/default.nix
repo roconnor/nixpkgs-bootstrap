@@ -32,14 +32,14 @@ stage1env.override (final: prev: with final;
   configurePhase = ''
     rm -rf src/complex
 
-    mkdir -p $out/bin $out/lib/i386-unknown-linux-musl $out/include/musl
+    mkdir -p $out/bin $out/lib $out/include
  
     CC=tcc ./configure \
       --host=i386 \
       --disable-shared \
       --prefix="''${out}" \
-      --libdir="''${out}/lib/i386-unknown-linux-musl" \
-      --includedir="''${out}/include/musl"
+      --libdir="''${out}/lib" \
+      --includedir="''${out}/include"
 
     cat config.mak
   '';
