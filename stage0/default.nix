@@ -1,4 +1,4 @@
-{ system ? builtins.currentSystem
+{ system ? "i686-linux"
 , lib
 , stage0-seed-bin
 , ...
