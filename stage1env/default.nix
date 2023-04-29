@@ -20,7 +20,7 @@ lib.fixDerivation (final:
 
   buildInputs = [];
 
-  PATH = builtins.concatStringsSep ":" (builtins.map (pkg: "${pkg}/bin") (final.buildInputs ++ [ coreutils ]));
+  PATH = builtins.concatStringsSep ":" (builtins.map (pkg: "${pkg}/bin") (builtins.filter (x: x != null) final.buildInputs ++ [ coreutils ]));
 
   phases = [ "unpackPhase" "patchPhase" "configurePhase" "buildPhase" "installPhase" ];
  

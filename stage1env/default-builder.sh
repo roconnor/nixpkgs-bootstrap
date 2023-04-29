@@ -14,7 +14,7 @@ for curPhase in ${phases}; do
     eval "${!curPhase}"
   
     if [ "$curPhase" = unpackPhase ]; then
-      cd *
+      cd ${sourceRoot:-*}
     fi
   fi
 done

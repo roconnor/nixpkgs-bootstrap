@@ -45,7 +45,7 @@ stage0env.override (final: prev: with final;
 
     # Build lex
     cd ../lex
-    make -f Makefile.mk CC=tcc AR=tcc\ -ar CFLAGS=-DEILSEQ=84\ -DMB_LEN_MAX=100 LDFLAGS=-lgetopt\ -static RANLIB=true
+    make -f Makefile.mk CC=tcc AR=tcc\ -ar CFLAGS=-DEILSEQ=84\ -DMB_LEN_MAX=100 LDFLAGS=-lgetopt\ -static RANLIB=true LEXDIR=''${lex}/lib
 
     # Install lex
     install lex ''${lex}/bin
@@ -54,5 +54,6 @@ stage0env.override (final: prev: with final;
   '';
   
   # yacc has a reference to $out/lib/yaccpar.
-  allowedReferences = [ "yacc" ];
+  # lex has a reference to $out/lib/ncform.
+  allowedReferences = [ "lex" "yacc" ];
 })
