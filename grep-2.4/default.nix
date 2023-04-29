@@ -1,7 +1,5 @@
 { stage1env
 , tcc
-, make
-, bash
 , ...
 }:
 stage1env.override (final: prev: with final;
@@ -14,7 +12,7 @@ stage1env.override (final: prev: with final;
     sha256="a32032bab36208509466654df12f507600dfe0313feebbcd218c32a70bf72a16";
   };
 
-  buildInputs = [ tcc make ];
+  buildInputs = [ tcc ];
 
   makefile = mk/main.mk;
 })
