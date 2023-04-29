@@ -55,6 +55,6 @@ in lib.fix
   tcc-musl = tcc-musl3; # This is the fixed point of tcc and musl.
   m4 = callPackage ./m4/1.4.7.nix { tcc = tcc-musl; };
   grep = callPackage ./grep/2.4.nix { tcc = tcc-musl; };
-  "flex-2.5.11" = callPackage ./flex/2.5.11.nix { tcc = tcc-musl; lex = heirloom-devtools.lex; yacc = heirloom-devtools.yacc; };
+  "flex-2.5.11" = callPackage ./flex/2.5.11.nix { lex = heirloom-devtools.lex; };
   flex = callPackage ./flex/2.6.4.nix { tcc = tcc-musl; yacc = heirloom-devtools.yacc; flex = final."flex-2.5.11"; };
 })

@@ -26,4 +26,11 @@ stage1env.override (final: prev: with final;
   '';
 
   makefile = mk/${version}.mk;
+
+  meta = with lib; {
+    homepage = "https://github.com/westes/flex";
+    description = "A fast lexical analyser generator";
+    license = licenses.bsd2;
+    platforms = platforms.unix;
+  };
 })
