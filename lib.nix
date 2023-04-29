@@ -8,8 +8,11 @@ let
      in if builtins.isFunction prev0
         then prevprev: mkExtension (prevprev // (prev0 prevprev))
         else mkExtension prev0;
-  fix = class0: let class = class0; final = class final; in final // { _class = class; override = ext: fix (extend class ext); };
-  fixDerivation = class0: let class = class0; final = derivation (class final); in final // { _class = class; override = ext: fixDerivation (extend class ext); };
+  fix = class: let final = class final; in final // { _class = class; override = ext: fix (extend class ext); };
+  fixDerivation = class: let preFinal = class final;
+                             final = derivation (removeAttrs preFinal [ "meta" "passthru" ]); # At the moment we simply toss away meta.
+                         in final // (if (final?passthru) then final.passsthru else {})
+                                  // { inherit (final) passthru; _class = class; override = ext: fixDerivation (extend class ext); };
 in fix
 (final: with final;
 let
