@@ -24,7 +24,7 @@ in lib.fix
   heirloom-devtools = callPackage ./heirloom-devtools-070527 { tcc = tcc-mes; };
   bash = callPackage ./bash-2.05b { tcc = tcc-mes; };
 
-  stage1env = callPackage ./stage1env { tcc = tcc-mes; };
+  stage1env = callPackage ./stage1env { };
   tcc-unwrapped = callPackage ./tinycc/0.9.27.nix { CC = "${final."tcc-0.9.26"}/bin/tcc"; };
   tcc-musl0 = callPackage ./tinycc/wrapped.nix
     rec
