@@ -19,6 +19,4 @@
     ${prev.patchPhase}
     cp ${files/scan.lex.l} scan.lex.l
   '';
-
-  LIBRARY_PATH = "${lex}/lib";
 })

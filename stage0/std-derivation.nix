@@ -20,9 +20,10 @@ in {
 
   buildInputs = [];
 
-  PATH = builtins.concatStringsSep ":"
-   (builtins.map (pkg: "${pkg}/bin") (final.buildInputs ++ [ stage0 ]));
- 
+  PATH = lib.mkPath "bin" (final.buildInputs ++ [ stage0 ]);
+  LIBRARY_PATH = lib.mkPath "lib" final.buildInputs;
+  C_INCLUDE_PATH = lib.mkPath "include" final.buildInputs;
+
   passAsFile = [ "buildCommand" "unpackPhase" "patchPhase" "configurePhase" "buildPhase" "installPhase" ];
 
   unpackPhase = lib.optional (!final?buildCommand && !final?buildCommandPath) ''

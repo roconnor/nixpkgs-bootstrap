@@ -16,7 +16,7 @@ stage0env.override (final: prev: with final;
     sha256="ba03d412998cc54bd0b0f2d6c32100967d3137098affdc2d32e6e7c11b163fe4";
   };
 
-  buildInputs = [ tcc make patch heirloom-devtools.yacc ];
+  buildInputs = [ libgetopt tcc make patch heirloom-devtools.yacc ];
 
   patches = [ 
     patches/mes-libc.patch
@@ -38,9 +38,6 @@ stage0env.override (final: prev: with final;
   '';
 
   buildPhase = ''
-    C_INCLUDE_PATH=${libgetopt}/include:''${C_INCLUDE_PATH}
-    LIBRARY_PATH=${libgetopt}/lib:''${LIBRARY_PATH}
-
     # Unset the prefix to elimimate ''${prefix}/bin from bash's default search path.
     unset prefix
     make mkbuiltins

@@ -40,4 +40,7 @@ in {
   callWithScope = scope: f: call (withScope scope f);
 
   optional = b: s: if b then s else "";
+
+  mkPath = subdir: pkgs: builtins.concatStringsSep ":"
+   (builtins.map (pkg: "${pkg}/${subdir}") (builtins.filter (x: x != null) pkgs));
 })

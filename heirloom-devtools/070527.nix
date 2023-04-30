@@ -16,7 +16,7 @@ stage0env.override (final: prev: with final;
     sha256="9f233d8b78e4351fe9dd2d50d83958a0e5af36f54e9818521458a08e058691ba";
   };
 
-  buildInputs = [ tcc make patch coreutils "${builtins.placeholder "yacc"}" ];
+  buildInputs = [ libgetopt tcc make patch coreutils "${builtins.placeholder "yacc"}" ];
 
   outputs = [ "yacc" "lex" ];
 
@@ -29,9 +29,6 @@ stage0env.override (final: prev: with final;
 
   installPhase = ''
     mkdir -p ''${yacc}/bin ''${yacc}/lib
-
-    C_INCLUDE_PATH=${libgetopt}/include:''${C_INCLUDE_PATH}
-    LIBRARY_PATH=${libgetopt}/lib:''${LIBRARY_PATH}
 
     # Build yacc
     cd yacc
