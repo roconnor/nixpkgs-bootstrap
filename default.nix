@@ -67,4 +67,5 @@ in lib.fix
   bison-pass3 = callPackage ./bison/3.4.1.nix { tcc = tcc-musl; bison = bison-pass2; };
   bison-pass4 = callPackage ./bison/3.4.1.nix { tcc = tcc-musl; bison = bison-pass3; };
   bison = bison-pass3;
+  gawk = callPackage ./gawk/3.0.4.nix { tcc = tcc-musl; yacc = heirloom-devtools.yacc; };
 })
