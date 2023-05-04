@@ -57,4 +57,14 @@ in lib.fix
   grep = callPackage ./grep/2.4.nix { tcc = tcc-musl; };
   "flex-2.5.11" = callPackage ./flex/2.5.11.nix { lex = heirloom-devtools.lex; };
   flex = callPackage ./flex/2.6.4.nix { tcc = tcc-musl; yacc = heirloom-devtools.yacc; flex = final."flex-2.5.11"; };
+  bison-pass1 = callPackage ./bison/3.4.1.nix { tcc = tcc-musl; bison = null; mkBison = ''
+    cp ${bison/files/parse-gram.c} src/parse-gram.c
+    cp ${bison/files/parse-gram.h} src/parse-gram.h
+  ''; };
+  bison-pass2 = callPackage ./bison/3.4.1.nix { tcc = tcc-musl; bison = bison-pass1; mkBison = ''
+    cp ${bison/files/parse-gram.y} src/parse-gram.y
+  ''; };
+  bison-pass3 = callPackage ./bison/3.4.1.nix { tcc = tcc-musl; bison = bison-pass2; };
+  bison-pass4 = callPackage ./bison/3.4.1.nix { tcc = tcc-musl; bison = bison-pass3; };
+  bison = bison-pass3;
 })
