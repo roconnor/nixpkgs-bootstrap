@@ -1,15 +1,14 @@
+{ hex0-seed ? stage0-seed-x86/bin/hex0-seed # /nix/store/g2v02q30hqhhng1fy8qrsq0vvdv22kj9-hex0-x86
+}:
 let lib = import ./lib.nix;
 in lib.fix
 (final: with final;
-{ inherit lib;
+{ inherit lib hex0-seed;
   callPackage = lib.callWithScope final;
-  stage0-seed-bin = builtins.path {
-    path = ./stage0-seed-x86/bin;
-    sha256 = "caf977390da2f94e173c86c1fc6015a0ffd6ba649954d59015a91b73e3cefb07";
-  };
-  stage0 = callPackage ./stage0 { inherit stage0-seed-bin; };
+  hex0 = callPackage ./stage0/hex0.nix { hex0 = hex0-seed; };
+  kaem-minimal = callPackage stage0/kaem-minimal.nix { };
+  stage0 = callPackage ./stage0 { hex0 = hex0-seed; };
   stage0env = callPackage ./stage0/std-derivation.nix {};
-  stage0-seed = callPackage ./stage0/seed.nix {};
   mes = callPackage ./mes/0.24.2.nix {};
   "tcc-0.9.26" = callPackage ./tinycc/0.9.26.nix {};
   tcc-mes = callPackage ./tinycc/0.9.27-pass1.nix { CC = "${final."tcc-0.9.26"}/bin/tcc"; };

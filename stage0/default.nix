@@ -1,6 +1,7 @@
 { system ? "i686-linux"
 , lib
-, stage0-seed-bin
+, hex0
+, kaem-minimal
 , ...
 }:
 assert builtins.elem system ["i686-linux" "x86_64-linux"];
@@ -44,7 +45,7 @@ let ARCH="x86";
     ###############################################i
     # Phase-0 Build hex0 from bootstrapped binary #
     ###############################################
-    ${stage0-seed-bin}/hex0-seed ${stage0-posix-x86/hex0_x86.hex0} hex0
+    ${hex0} ${stage0-posix-x86/hex0_x86.hex0} hex0
     # hex0 should have the exact same checksum as hex0-seed as they are both supposed
     # to be built from hex0_x86.hex0 and by definition must be identical
 
@@ -601,11 +602,11 @@ in lib.fixDerivation (final:
   inherit system ARCH BASE_ADDRESS;
   name = "stage0-${ARCH}";
     
-  builder = "${stage0-seed-bin}/kaem-seed";
+  builder = kaem-minimal;
   args = [ mescc-tools-seed-kaem ];
     
-#  outputHashMode = "recursive";
-#  outputHashAlgo = "sha256";
+  outputHashMode = "recursive";
+  outputHashAlgo = "sha256";
 #  outputHash = "d6Aa2/CxUhu29ZA+W0lodZfudfCFwf7rgSaTTm8yHe4=";
     
   allowedReferences = [];
