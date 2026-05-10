@@ -16,3 +16,6 @@
 [submodule "stage0/mescc-tools-extra"]
 	path = stage0/mescc-tools-extra
 	url = https://github.com/oriansj/mescc-tools-extra.git
+[submodule "blynn-compiler/src"]
+	path = blynn-compiler/src
+	url = https://github.com/oriansj/blynn-compiler/

@@ -9,6 +9,7 @@ in lib.fix
   kaem-minimal = callPackage stage0/kaem-minimal.nix { };
   stage0 = callPackage ./stage0 { hex0 = hex0-seed; };
   stage0env = callPackage ./stage0/std-derivation.nix {};
+  blynn-compiler = import ./blynn-compiler { pkgs = final; };
   simple-patch = callPackage ./simple-patch/1.0.nix {};
   mes = callPackage ./mes/0.27.1.nix {};
   "tcc-0.9.26" = callPackage ./tinycc/0.9.26.nix {};
