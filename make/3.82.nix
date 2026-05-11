@@ -49,10 +49,9 @@ stage0env.override (final: prev: with final;
     tcc -c -DHAVE_FCNTL_H getloadavg.c
     tcc -c -Iglob -DSTDC_HEADERS glob/fnmatch.c
     tcc -c -Iglob -DHAVE_STRDUP -DHAVE_DIRENT_H glob/glob.c
-    tcc -c putenv_stub.c
 
     # Link
-    tcc -static -o make getopt.o getopt1.o ar.o arscan.o commands.o default.o dir.o expand.o file.o function.o implicit.o job.o main.o misc.o read.o remake.o rule.o signame.o strcache.o variable.o version.o vpath.o hash.o remote-stub.o getloadavg.o fnmatch.o glob.o putenv_stub.o
+    tcc -static -o make getopt.o getopt1.o ar.o arscan.o commands.o default.o dir.o expand.o file.o function.o implicit.o job.o main.o misc.o read.o remake.o rule.o signame.o strcache.o variable.o version.o vpath.o hash.o remote-stub.o getloadavg.o fnmatch.o glob.o
   '';
 
   installPhase = ''

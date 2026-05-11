@@ -1,369 +1,299 @@
-# SPDX-FileCopyrightText: 2021-22 fosslinux <fosslinux@aussies.space>
+#!/bin/sh
+
+# SPDX-FileCopyrightText: 2021-22 Samuel Tyler <samuel@samuelt.me>
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 set -ex
 
-prefix=${out}
-bindir=${prefix}/bin
-libdir=${prefix}/lib
-mkdir -p ${bindir} ${libdir}/tcc
+PREFIX=${out}
+BINDIR=${PREFIX}/bin
+LIBDIR=${PREFIX}/lib
+mkdir -p ${BINDIR} ${LIBDIR}
 
-PATH=${PATH}:${bindir}
+PATH=${PATH}:${BINDIR}
 
 # Vars
 MES_STACK=15000000
 MES_ARENA=30000000
 MES_MAX_ARENA=30000000
-MES=${MES_BIN}/mes
 
 TCC_TAR=tcc-0.9.26
-TCC_PKG=tcc-0.9.26-1136-g5bba73cc
 
 # Unpack
-mkdir src build
-
-cd src
-ungz --file ${src} --output ${TCC_TAR}.tar
-cd ..
+mkdir build
 
 cd build
-untar --file ../src/${TCC_TAR}.tar
+ungz --file ${src} --output ${TCC_TAR}.tar
+untar --non-strict --file ${TCC_TAR}.tar
+simple-patch ${TCC_PKG}/tcctools.c \
+    ${simple_patches}/remove-fileopen.before ${simple_patches}/remove-fileopen.after
+simple-patch ${TCC_PKG}/tcctools.c \
+    ${simple_patches}/addback-fileopen.before ${simple_patches}/addback-fileopen.after
 
 # Create config.h
+catm ${TCC_PKG}/config.h
 cd ${TCC_PKG}
-catm config.h
+
+if match ${ARCH} x86; then
+    MES_ARCH=x86
+    TCC_TARGET_ARCH=I386
+    HAVE_LONG_LONG=0
+fi
+if match ${ARCH} amd64; then
+    MES_ARCH=x86_64
+    TCC_TARGET_ARCH=X86_64
+    HAVE_LONG_LONG=1
+fi
+if match ${ARCH} riscv64; then
+    MES_ARCH=riscv64
+    TCC_TARGET_ARCH=RISCV64
+    HAVE_LONG_LONG=1
+fi
+
 
 ${MES} --no-auto-compile -e main ${MES_BIN}/mescc.scm -- \
     -S \
     -o tcc.s \
-    -I ${incdir} \
+    -I ${INCDIR} \
     -D BOOTSTRAP=1 \
+    -D HAVE_LONG_LONG=${HAVE_LONG_LONG} \
     -I . \
-    -D TCC_TARGET_I386=1 \
+    -D TCC_TARGET_${TCC_TARGET_ARCH}=1 \
     -D inline= \
-    -D CONFIG_TCCDIR=\"${libdir}/tcc\" \
+    -D CONFIG_TCCDIR=\"${LIBDIR}/tcc\" \
     -D CONFIG_SYSROOT=\"/\" \
-    -D CONFIG_TCC_CRTPREFIX=\"${libdir}\" \
+    -D CONFIG_TCC_CRTPREFIX=\"${LIBDIR}\" \
     -D CONFIG_TCC_ELFINTERP=\"/mes/loader\" \
-    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${incdir}\" \
-    -D TCC_LIBGCC=\"${libdir}/libc.a\" \
+    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${INCDIR}\" \
+    -D TCC_LIBGCC=\"${LIBDIR}/libc.a\" \
     -D CONFIG_TCC_LIBTCC1_MES=0 \
     -D CONFIG_TCCBOOT=1 \
     -D CONFIG_TCC_STATIC=1 \
     -D CONFIG_USE_LIBGCC=1 \
-    -D TCC_MES_LIBC=1 \
     -D TCC_VERSION=\"0.9.26\" \
     -D ONE_SOURCE=1 \
     tcc.c
 ${MES} --no-auto-compile -e main ${MES_BIN}/mescc.scm -- \
     --base-address 0x08048000 \
-    -o mes-tcc \
+    -o tcc-mes \
     -L ${MES_LIB} \
     tcc.s \
     -l c+tcc
-cp mes-tcc ${bindir}/
-chmod 755 ${bindir}/mes-tcc
+cp tcc-mes ${BINDIR}/
+chmod 755 ${BINDIR}/tcc-mes
 
-# Install libc into a subdirectory
-
-# test mes-tcc
-mes-tcc -version
+# test tcc-mes
+tcc-mes -version
 
 # Recompile the mes C library
 
 # Create unified libc file
-catm unified-libc.c ${MES_PREFIX}/lib/ctype/isalnum.c ${MES_PREFIX}/lib/ctype/isalpha.c ${MES_PREFIX}/lib/ctype/isascii.c ${MES_PREFIX}/lib/ctype/iscntrl.c ${MES_PREFIX}/lib/ctype/isdigit.c ${MES_PREFIX}/lib/ctype/isgraph.c ${MES_PREFIX}/lib/ctype/islower.c ${MES_PREFIX}/lib/ctype/isnumber.c ${MES_PREFIX}/lib/ctype/isprint.c ${MES_PREFIX}/lib/ctype/ispunct.c ${MES_PREFIX}/lib/ctype/isspace.c ${MES_PREFIX}/lib/ctype/isupper.c ${MES_PREFIX}/lib/ctype/isxdigit.c ${MES_PREFIX}/lib/ctype/tolower.c ${MES_PREFIX}/lib/ctype/toupper.c ${MES_PREFIX}/lib/dirent/closedir.c ${MES_PREFIX}/lib/dirent/__getdirentries.c ${MES_PREFIX}/lib/dirent/opendir.c ${MES_PREFIX}/lib/dirent/readdir.c ${MES_PREFIX}/lib/linux/access.c ${MES_PREFIX}/lib/linux/brk.c ${MES_PREFIX}/lib/linux/chdir.c ${MES_PREFIX}/lib/linux/chmod.c ${MES_PREFIX}/lib/linux/clock_gettime.c ${MES_PREFIX}/lib/linux/close.c ${MES_PREFIX}/lib/linux/dup2.c ${MES_PREFIX}/lib/linux/dup.c ${MES_PREFIX}/lib/linux/execve.c ${MES_PREFIX}/lib/linux/fcntl.c ${MES_PREFIX}/lib/linux/fork.c ${MES_PREFIX}/lib/linux/fsync.c ${MES_PREFIX}/lib/linux/fstat.c ${MES_PREFIX}/lib/linux/_getcwd.c ${MES_PREFIX}/lib/linux/getdents.c ${MES_PREFIX}/lib/linux/getegid.c ${MES_PREFIX}/lib/linux/geteuid.c ${MES_PREFIX}/lib/linux/getgid.c ${MES_PREFIX}/lib/linux/getpid.c ${MES_PREFIX}/lib/linux/getppid.c ${MES_PREFIX}/lib/linux/getrusage.c ${MES_PREFIX}/lib/linux/gettimeofday.c ${MES_PREFIX}/lib/linux/getuid.c ${MES_PREFIX}/lib/linux/ioctl.c ${MES_PREFIX}/lib/linux/ioctl3.c ${MES_PREFIX}/lib/linux/kill.c ${MES_PREFIX}/lib/linux/link.c ${MES_PREFIX}/lib/linux/lseek.c ${MES_PREFIX}/lib/linux/lstat.c ${MES_PREFIX}/lib/linux/malloc.c ${MES_PREFIX}/lib/linux/mkdir.c ${MES_PREFIX}/lib/linux/mknod.c ${MES_PREFIX}/lib/linux/nanosleep.c ${MES_PREFIX}/lib/linux/_open3.c ${MES_PREFIX}/lib/linux/pipe.c ${MES_PREFIX}/lib/linux/_read.c ${MES_PREFIX}/lib/linux/readlink.c ${MES_PREFIX}/lib/linux/rename.c ${MES_PREFIX}/lib/linux/rmdir.c ${MES_PREFIX}/lib/linux/setgid.c ${MES_PREFIX}/lib/linux/settimer.c ${MES_PREFIX}/lib/linux/setuid.c ${MES_PREFIX}/lib/linux/signal.c ${MES_PREFIX}/lib/linux/sigprogmask.c ${MES_PREFIX}/lib/linux/symlink.c ${MES_PREFIX}/lib/linux/stat.c ${MES_PREFIX}/lib/linux/time.c ${MES_PREFIX}/lib/linux/unlink.c ${MES_PREFIX}/lib/linux/waitpid.c ${MES_PREFIX}/lib/linux/x86-mes-gcc/_exit.c ${MES_PREFIX}/lib/linux/x86-mes-gcc/syscall.c ${MES_PREFIX}/lib/linux/x86-mes-gcc/_write.c ${MES_PREFIX}/lib/math/ceil.c ${MES_PREFIX}/lib/math/fabs.c ${MES_PREFIX}/lib/math/floor.c ${MES_PREFIX}/lib/mes/abtod.c ${MES_PREFIX}/lib/mes/abtol.c ${MES_PREFIX}/lib/mes/__assert_fail.c ${MES_PREFIX}/lib/mes/assert_msg.c ${MES_PREFIX}/lib/mes/__buffered_read.c ${MES_PREFIX}/lib/mes/cast.c ${MES_PREFIX}/lib/mes/dtoab.c ${MES_PREFIX}/lib/mes/eputc.c ${MES_PREFIX}/lib/mes/eputs.c ${MES_PREFIX}/lib/mes/fdgetc.c ${MES_PREFIX}/lib/mes/fdgets.c ${MES_PREFIX}/lib/mes/fdputc.c ${MES_PREFIX}/lib/mes/fdputs.c ${MES_PREFIX}/lib/mes/fdungetc.c ${MES_PREFIX}/lib/mes/globals.c ${MES_PREFIX}/lib/mes/itoa.c ${MES_PREFIX}/lib/mes/ltoab.c ${MES_PREFIX}/lib/mes/ltoa.c ${MES_PREFIX}/lib/mes/__mes_debug.c ${MES_PREFIX}/lib/mes/mes_open.c ${MES_PREFIX}/lib/mes/ntoab.c ${MES_PREFIX}/lib/mes/oputc.c ${MES_PREFIX}/lib/mes/oputs.c ${MES_PREFIX}/lib/mes/search-path.c ${MES_PREFIX}/lib/mes/ultoa.c ${MES_PREFIX}/lib/mes/utoa.c ${MES_PREFIX}/lib/posix/alarm.c ${MES_PREFIX}/lib/posix/buffered-read.c ${MES_PREFIX}/lib/posix/execl.c ${MES_PREFIX}/lib/posix/execlp.c ${MES_PREFIX}/lib/posix/execv.c ${MES_PREFIX}/lib/posix/execvp.c ${MES_PREFIX}/lib/posix/getcwd.c ${MES_PREFIX}/lib/posix/getenv.c ${MES_PREFIX}/lib/posix/isatty.c ${MES_PREFIX}/lib/posix/mktemp.c ${MES_PREFIX}/lib/posix/open.c ${MES_PREFIX}/lib/posix/raise.c ${MES_PREFIX}/lib/posix/sbrk.c ${MES_PREFIX}/lib/posix/setenv.c ${MES_PREFIX}/lib/posix/sleep.c ${MES_PREFIX}/lib/posix/unsetenv.c ${MES_PREFIX}/lib/posix/wait.c ${MES_PREFIX}/lib/posix/write.c ${MES_PREFIX}/lib/stdio/clearerr.c ${MES_PREFIX}/lib/stdio/fclose.c ${MES_PREFIX}/lib/stdio/fdopen.c ${MES_PREFIX}/lib/stdio/feof.c ${MES_PREFIX}/lib/stdio/ferror.c ${MES_PREFIX}/lib/stdio/fflush.c ${MES_PREFIX}/lib/stdio/fgetc.c ${MES_PREFIX}/lib/stdio/fgets.c ${MES_PREFIX}/lib/stdio/fileno.c ${MES_PREFIX}/lib/stdio/fopen.c ${MES_PREFIX}/lib/stdio/fprintf.c ${MES_PREFIX}/lib/stdio/fputc.c ${MES_PREFIX}/lib/stdio/fputs.c ${MES_PREFIX}/lib/stdio/fread.c ${MES_PREFIX}/lib/stdio/freopen.c ${MES_PREFIX}/lib/stdio/fscanf.c ${MES_PREFIX}/lib/stdio/fseek.c ${MES_PREFIX}/lib/stdio/ftell.c ${MES_PREFIX}/lib/stdio/fwrite.c ${MES_PREFIX}/lib/stdio/getc.c ${MES_PREFIX}/lib/stdio/getchar.c ${MES_PREFIX}/lib/stdio/perror.c ${MES_PREFIX}/lib/stdio/printf.c ${MES_PREFIX}/lib/stdio/putc.c ${MES_PREFIX}/lib/stdio/putchar.c ${MES_PREFIX}/lib/stdio/remove.c ${MES_PREFIX}/lib/stdio/snprintf.c ${MES_PREFIX}/lib/stdio/sprintf.c ${MES_PREFIX}/lib/stdio/sscanf.c ${MES_PREFIX}/lib/stdio/ungetc.c ${MES_PREFIX}/lib/stdio/vfprintf.c ${MES_PREFIX}/lib/stdio/vfscanf.c ${MES_PREFIX}/lib/stdio/vprintf.c ${MES_PREFIX}/lib/stdio/vsnprintf.c ${MES_PREFIX}/lib/stdio/vsprintf.c ${MES_PREFIX}/lib/stdio/vsscanf.c ${MES_PREFIX}/lib/stdlib/abort.c ${MES_PREFIX}/lib/stdlib/abs.c ${MES_PREFIX}/lib/stdlib/alloca.c ${MES_PREFIX}/lib/stdlib/atexit.c ${MES_PREFIX}/lib/stdlib/atof.c ${MES_PREFIX}/lib/stdlib/atoi.c ${MES_PREFIX}/lib/stdlib/atol.c ${MES_PREFIX}/lib/stdlib/calloc.c ${MES_PREFIX}/lib/stdlib/__exit.c ${MES_PREFIX}/lib/stdlib/exit.c ${MES_PREFIX}/lib/stdlib/free.c ${MES_PREFIX}/lib/stdlib/mbstowcs.c ${MES_PREFIX}/lib/stdlib/puts.c ${MES_PREFIX}/lib/stdlib/qsort.c ${MES_PREFIX}/lib/stdlib/realloc.c ${MES_PREFIX}/lib/stdlib/strtod.c ${MES_PREFIX}/lib/stdlib/strtof.c ${MES_PREFIX}/lib/stdlib/strtol.c ${MES_PREFIX}/lib/stdlib/strtold.c ${MES_PREFIX}/lib/stdlib/strtoll.c ${MES_PREFIX}/lib/stdlib/strtoul.c ${MES_PREFIX}/lib/stdlib/strtoull.c ${MES_PREFIX}/lib/string/bcmp.c ${MES_PREFIX}/lib/string/bcopy.c ${MES_PREFIX}/lib/string/bzero.c ${MES_PREFIX}/lib/string/index.c ${MES_PREFIX}/lib/string/memchr.c ${MES_PREFIX}/lib/string/memcmp.c ${MES_PREFIX}/lib/string/memcpy.c ${MES_PREFIX}/lib/string/memmem.c ${MES_PREFIX}/lib/string/memmove.c ${MES_PREFIX}/lib/string/memset.c ${MES_PREFIX}/lib/string/rindex.c ${MES_PREFIX}/lib/string/strcat.c ${MES_PREFIX}/lib/string/strchr.c ${MES_PREFIX}/lib/string/strcmp.c ${MES_PREFIX}/lib/string/strcpy.c ${MES_PREFIX}/lib/string/strcspn.c ${MES_PREFIX}/lib/string/strdup.c ${MES_PREFIX}/lib/string/strerror.c ${MES_PREFIX}/lib/string/strlen.c ${MES_PREFIX}/lib/string/strlwr.c ${MES_PREFIX}/lib/string/strncat.c ${MES_PREFIX}/lib/string/strncmp.c ${MES_PREFIX}/lib/string/strncpy.c ${MES_PREFIX}/lib/string/strpbrk.c ${MES_PREFIX}/lib/string/strrchr.c ${MES_PREFIX}/lib/string/strspn.c ${MES_PREFIX}/lib/string/strstr.c ${MES_PREFIX}/lib/string/strupr.c ${MES_PREFIX}/lib/stub/atan2.c ${MES_PREFIX}/lib/stub/bsearch.c ${MES_PREFIX}/lib/stub/chown.c ${MES_PREFIX}/lib/stub/__cleanup.c ${MES_PREFIX}/lib/stub/cos.c ${MES_PREFIX}/lib/stub/ctime.c ${MES_PREFIX}/lib/stub/exp.c ${MES_PREFIX}/lib/stub/fpurge.c ${MES_PREFIX}/lib/stub/freadahead.c ${MES_PREFIX}/lib/stub/frexp.c ${MES_PREFIX}/lib/stub/getgrgid.c ${MES_PREFIX}/lib/stub/getgrnam.c ${MES_PREFIX}/lib/stub/getlogin.c ${MES_PREFIX}/lib/stub/getpgid.c ${MES_PREFIX}/lib/stub/getpgrp.c ${MES_PREFIX}/lib/stub/getpwnam.c ${MES_PREFIX}/lib/stub/getpwuid.c ${MES_PREFIX}/lib/stub/gmtime.c ${MES_PREFIX}/lib/stub/ldexp.c ${MES_PREFIX}/lib/stub/localtime.c ${MES_PREFIX}/lib/stub/log.c ${MES_PREFIX}/lib/stub/mktime.c ${MES_PREFIX}/lib/stub/modf.c ${MES_PREFIX}/lib/stub/mprotect.c ${MES_PREFIX}/lib/stub/pclose.c ${MES_PREFIX}/lib/stub/popen.c ${MES_PREFIX}/lib/stub/pow.c ${MES_PREFIX}/lib/stub/rand.c ${MES_PREFIX}/lib/stub/rewind.c ${MES_PREFIX}/lib/stub/setbuf.c ${MES_PREFIX}/lib/stub/setgrent.c ${MES_PREFIX}/lib/stub/setlocale.c ${MES_PREFIX}/lib/stub/setvbuf.c ${MES_PREFIX}/lib/stub/sigaction.c ${MES_PREFIX}/lib/stub/sigaddset.c ${MES_PREFIX}/lib/stub/sigblock.c ${MES_PREFIX}/lib/stub/sigdelset.c ${MES_PREFIX}/lib/stub/sigemptyset.c ${MES_PREFIX}/lib/stub/sigsetmask.c ${MES_PREFIX}/lib/stub/sin.c ${MES_PREFIX}/lib/stub/sys_siglist.c ${MES_PREFIX}/lib/stub/system.c ${MES_PREFIX}/lib/stub/sqrt.c ${MES_PREFIX}/lib/stub/strftime.c ${MES_PREFIX}/lib/stub/times.c ${MES_PREFIX}/lib/stub/ttyname.c ${MES_PREFIX}/lib/stub/umask.c ${MES_PREFIX}/lib/stub/utime.c ${MES_PREFIX}/lib/x86-mes-gcc/setjmp.c
+catm unified-libc.c ${MES_PREFIX}/lib/ctype/isalnum.c ${MES_PREFIX}/lib/ctype/isalpha.c ${MES_PREFIX}/lib/ctype/isascii.c ${MES_PREFIX}/lib/ctype/iscntrl.c ${MES_PREFIX}/lib/ctype/isdigit.c ${MES_PREFIX}/lib/ctype/isgraph.c ${MES_PREFIX}/lib/ctype/islower.c ${MES_PREFIX}/lib/ctype/isnumber.c ${MES_PREFIX}/lib/ctype/isprint.c ${MES_PREFIX}/lib/ctype/ispunct.c ${MES_PREFIX}/lib/ctype/isspace.c ${MES_PREFIX}/lib/ctype/isupper.c ${MES_PREFIX}/lib/ctype/isxdigit.c ${MES_PREFIX}/lib/ctype/tolower.c ${MES_PREFIX}/lib/ctype/toupper.c ${MES_PREFIX}/lib/dirent/closedir.c ${MES_PREFIX}/lib/dirent/__getdirentries.c ${MES_PREFIX}/lib/dirent/opendir.c ${MES_PREFIX}/lib/linux/readdir.c ${MES_PREFIX}/lib/linux/access.c ${MES_PREFIX}/lib/linux/brk.c ${MES_PREFIX}/lib/linux/chdir.c ${MES_PREFIX}/lib/linux/chmod.c ${MES_PREFIX}/lib/linux/clock_gettime.c ${MES_PREFIX}/lib/linux/close.c ${MES_PREFIX}/lib/linux/dup2.c ${MES_PREFIX}/lib/linux/dup.c ${MES_PREFIX}/lib/linux/execve.c ${MES_PREFIX}/lib/linux/fcntl.c ${MES_PREFIX}/lib/linux/fork.c ${MES_PREFIX}/lib/linux/fsync.c ${MES_PREFIX}/lib/linux/fstat.c ${MES_PREFIX}/lib/linux/_getcwd.c ${MES_PREFIX}/lib/linux/getdents.c ${MES_PREFIX}/lib/linux/getegid.c ${MES_PREFIX}/lib/linux/geteuid.c ${MES_PREFIX}/lib/linux/getgid.c ${MES_PREFIX}/lib/linux/getpid.c ${MES_PREFIX}/lib/linux/getppid.c ${MES_PREFIX}/lib/linux/getrusage.c ${MES_PREFIX}/lib/linux/gettimeofday.c ${MES_PREFIX}/lib/linux/getuid.c ${MES_PREFIX}/lib/linux/ioctl.c ${MES_PREFIX}/lib/linux/ioctl3.c ${MES_PREFIX}/lib/linux/kill.c ${MES_PREFIX}/lib/linux/link.c ${MES_PREFIX}/lib/linux/lseek.c ${MES_PREFIX}/lib/linux/lstat.c ${MES_PREFIX}/lib/linux/malloc.c ${MES_PREFIX}/lib/linux/mkdir.c ${MES_PREFIX}/lib/linux/mknod.c ${MES_PREFIX}/lib/linux/nanosleep.c ${MES_PREFIX}/lib/linux/_open3.c ${MES_PREFIX}/lib/linux/pipe.c ${MES_PREFIX}/lib/linux/_read.c ${MES_PREFIX}/lib/linux/readlink.c ${MES_PREFIX}/lib/linux/rename.c ${MES_PREFIX}/lib/linux/rmdir.c ${MES_PREFIX}/lib/linux/setgid.c ${MES_PREFIX}/lib/linux/settimer.c ${MES_PREFIX}/lib/linux/setuid.c ${MES_PREFIX}/lib/linux/signal.c ${MES_PREFIX}/lib/linux/sigprogmask.c ${MES_PREFIX}/lib/linux/symlink.c ${MES_PREFIX}/lib/linux/stat.c ${MES_PREFIX}/lib/linux/time.c ${MES_PREFIX}/lib/linux/unlink.c ${MES_PREFIX}/lib/linux/waitpid.c ${MES_PREFIX}/lib/linux/wait4.c ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/_exit.c ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/syscall.c ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/_write.c ${MES_PREFIX}/lib/math/ceil.c ${MES_PREFIX}/lib/math/fabs.c ${MES_PREFIX}/lib/math/floor.c ${MES_PREFIX}/lib/mes/abtod.c ${MES_PREFIX}/lib/mes/abtol.c ${MES_PREFIX}/lib/mes/__assert_fail.c ${MES_PREFIX}/lib/mes/assert_msg.c ${MES_PREFIX}/lib/mes/__buffered_read.c ${MES_PREFIX}/lib/mes/__init_io.c ${MES_PREFIX}/lib/mes/cast.c ${MES_PREFIX}/lib/mes/dtoab.c ${MES_PREFIX}/lib/mes/eputc.c ${MES_PREFIX}/lib/mes/eputs.c ${MES_PREFIX}/lib/mes/fdgetc.c ${MES_PREFIX}/lib/mes/fdgets.c ${MES_PREFIX}/lib/mes/fdputc.c ${MES_PREFIX}/lib/mes/fdputs.c ${MES_PREFIX}/lib/mes/fdungetc.c ${MES_PREFIX}/lib/mes/globals.c ${MES_PREFIX}/lib/mes/itoa.c ${MES_PREFIX}/lib/mes/ltoab.c ${MES_PREFIX}/lib/mes/ltoa.c ${MES_PREFIX}/lib/mes/__mes_debug.c ${MES_PREFIX}/lib/mes/mes_open.c ${MES_PREFIX}/lib/mes/ntoab.c ${MES_PREFIX}/lib/mes/oputc.c ${MES_PREFIX}/lib/mes/oputs.c ${MES_PREFIX}/lib/mes/search-path.c ${MES_PREFIX}/lib/mes/ultoa.c ${MES_PREFIX}/lib/mes/utoa.c ${MES_PREFIX}/lib/posix/alarm.c ${MES_PREFIX}/lib/posix/buffered-read.c ${MES_PREFIX}/lib/posix/execl.c ${MES_PREFIX}/lib/posix/execlp.c ${MES_PREFIX}/lib/posix/execv.c ${MES_PREFIX}/lib/posix/execvp.c ${MES_PREFIX}/lib/posix/getcwd.c ${MES_PREFIX}/lib/posix/getenv.c ${MES_PREFIX}/lib/posix/isatty.c ${MES_PREFIX}/lib/posix/mktemp.c ${MES_PREFIX}/lib/posix/open.c ${MES_PREFIX}/lib/posix/pathconf.c ${MES_PREFIX}/lib/posix/raise.c ${MES_PREFIX}/lib/posix/sbrk.c ${MES_PREFIX}/lib/posix/setenv.c ${MES_PREFIX}/lib/posix/sleep.c ${MES_PREFIX}/lib/posix/unsetenv.c ${MES_PREFIX}/lib/posix/wait.c ${MES_PREFIX}/lib/posix/write.c ${MES_PREFIX}/lib/stdio/clearerr.c ${MES_PREFIX}/lib/stdio/fclose.c ${MES_PREFIX}/lib/stdio/fdopen.c ${MES_PREFIX}/lib/stdio/feof.c ${MES_PREFIX}/lib/stdio/ferror.c ${MES_PREFIX}/lib/stdio/fflush.c ${MES_PREFIX}/lib/stdio/fgetc.c ${MES_PREFIX}/lib/stdio/fgets.c ${MES_PREFIX}/lib/stdio/fileno.c ${MES_PREFIX}/lib/stdio/fopen.c ${MES_PREFIX}/lib/stdio/fprintf.c ${MES_PREFIX}/lib/stdio/fputc.c ${MES_PREFIX}/lib/stdio/fputs.c ${MES_PREFIX}/lib/stdio/fread.c ${MES_PREFIX}/lib/stdio/freopen.c ${MES_PREFIX}/lib/stdio/fscanf.c ${MES_PREFIX}/lib/stdio/fseek.c ${MES_PREFIX}/lib/stdio/ftell.c ${MES_PREFIX}/lib/stdio/fwrite.c ${MES_PREFIX}/lib/stdio/getc.c ${MES_PREFIX}/lib/stdio/getchar.c ${MES_PREFIX}/lib/stdio/perror.c ${MES_PREFIX}/lib/stdio/printf.c ${MES_PREFIX}/lib/stdio/putc.c ${MES_PREFIX}/lib/stdio/putchar.c ${MES_PREFIX}/lib/stdio/remove.c ${MES_PREFIX}/lib/stdio/snprintf.c ${MES_PREFIX}/lib/stdio/sprintf.c ${MES_PREFIX}/lib/stdio/sscanf.c ${MES_PREFIX}/lib/stdio/ungetc.c ${MES_PREFIX}/lib/stdio/vfprintf.c ${MES_PREFIX}/lib/stdio/vfscanf.c ${MES_PREFIX}/lib/stdio/vprintf.c ${MES_PREFIX}/lib/stdio/vsnprintf.c ${MES_PREFIX}/lib/stdio/vsprintf.c ${MES_PREFIX}/lib/stdio/vsscanf.c ${MES_PREFIX}/lib/stdlib/abort.c ${MES_PREFIX}/lib/stdlib/abs.c ${MES_PREFIX}/lib/stdlib/alloca.c ${MES_PREFIX}/lib/stdlib/atexit.c ${MES_PREFIX}/lib/stdlib/atof.c ${MES_PREFIX}/lib/stdlib/atoi.c ${MES_PREFIX}/lib/stdlib/atol.c ${MES_PREFIX}/lib/stdlib/calloc.c ${MES_PREFIX}/lib/stdlib/__exit.c ${MES_PREFIX}/lib/stdlib/exit.c ${MES_PREFIX}/lib/stdlib/free.c ${MES_PREFIX}/lib/stdlib/mbstowcs.c ${MES_PREFIX}/lib/stdlib/puts.c ${MES_PREFIX}/lib/stdlib/qsort.c ${MES_PREFIX}/lib/stdlib/realloc.c ${MES_PREFIX}/lib/stdlib/strtod.c ${MES_PREFIX}/lib/stdlib/strtof.c ${MES_PREFIX}/lib/stdlib/strtol.c ${MES_PREFIX}/lib/stdlib/strtold.c ${MES_PREFIX}/lib/stdlib/strtoll.c ${MES_PREFIX}/lib/stdlib/strtoul.c ${MES_PREFIX}/lib/stdlib/strtoull.c ${MES_PREFIX}/lib/string/bcmp.c ${MES_PREFIX}/lib/string/bcopy.c ${MES_PREFIX}/lib/string/bzero.c ${MES_PREFIX}/lib/string/index.c ${MES_PREFIX}/lib/string/memchr.c ${MES_PREFIX}/lib/string/memcmp.c ${MES_PREFIX}/lib/string/memcpy.c ${MES_PREFIX}/lib/string/memmem.c ${MES_PREFIX}/lib/string/memmove.c ${MES_PREFIX}/lib/string/memset.c ${MES_PREFIX}/lib/string/rindex.c ${MES_PREFIX}/lib/string/strcat.c ${MES_PREFIX}/lib/string/strchr.c ${MES_PREFIX}/lib/string/strcmp.c ${MES_PREFIX}/lib/string/strcpy.c ${MES_PREFIX}/lib/string/strcspn.c ${MES_PREFIX}/lib/string/strdup.c ${MES_PREFIX}/lib/string/strerror.c ${MES_PREFIX}/lib/string/strlen.c ${MES_PREFIX}/lib/string/strlwr.c ${MES_PREFIX}/lib/string/strncat.c ${MES_PREFIX}/lib/string/strncmp.c ${MES_PREFIX}/lib/string/strncpy.c ${MES_PREFIX}/lib/string/strpbrk.c ${MES_PREFIX}/lib/string/strrchr.c ${MES_PREFIX}/lib/string/strspn.c ${MES_PREFIX}/lib/string/strstr.c ${MES_PREFIX}/lib/string/strupr.c ${MES_PREFIX}/lib/stub/atan2.c ${MES_PREFIX}/lib/stub/bsearch.c ${MES_PREFIX}/lib/stub/chown.c ${MES_PREFIX}/lib/stub/__cleanup.c ${MES_PREFIX}/lib/stub/cos.c ${MES_PREFIX}/lib/stub/ctime.c ${MES_PREFIX}/lib/stub/exp.c ${MES_PREFIX}/lib/stub/fpurge.c ${MES_PREFIX}/lib/stub/freadahead.c ${MES_PREFIX}/lib/stub/frexp.c ${MES_PREFIX}/lib/stub/getgrgid.c ${MES_PREFIX}/lib/stub/getgrnam.c ${MES_PREFIX}/lib/stub/getlogin.c ${MES_PREFIX}/lib/stub/getpgid.c ${MES_PREFIX}/lib/stub/getpgrp.c ${MES_PREFIX}/lib/stub/getpwnam.c ${MES_PREFIX}/lib/stub/getpwuid.c ${MES_PREFIX}/lib/stub/gmtime.c ${MES_PREFIX}/lib/stub/ldexp.c ${MES_PREFIX}/lib/stub/localtime.c ${MES_PREFIX}/lib/stub/log.c ${MES_PREFIX}/lib/stub/mktime.c ${MES_PREFIX}/lib/stub/modf.c ${MES_PREFIX}/lib/stub/mprotect.c ${MES_PREFIX}/lib/stub/pclose.c ${MES_PREFIX}/lib/stub/popen.c ${MES_PREFIX}/lib/stub/pow.c ${MES_PREFIX}/lib/stub/putenv.c ${MES_PREFIX}/lib/stub/rand.c ${MES_PREFIX}/lib/stub/realpath.c ${MES_PREFIX}/lib/stub/rewind.c ${MES_PREFIX}/lib/stub/setbuf.c ${MES_PREFIX}/lib/stub/setgrent.c ${MES_PREFIX}/lib/stub/setlocale.c ${MES_PREFIX}/lib/stub/setvbuf.c ${MES_PREFIX}/lib/stub/sigaction.c ${MES_PREFIX}/lib/stub/sigaddset.c ${MES_PREFIX}/lib/stub/sigblock.c ${MES_PREFIX}/lib/stub/sigdelset.c ${MES_PREFIX}/lib/stub/sigemptyset.c ${MES_PREFIX}/lib/stub/sigsetmask.c ${MES_PREFIX}/lib/stub/sin.c ${MES_PREFIX}/lib/stub/sys_siglist.c ${MES_PREFIX}/lib/stub/system.c ${MES_PREFIX}/lib/stub/sqrt.c ${MES_PREFIX}/lib/stub/strftime.c ${MES_PREFIX}/lib/stub/times.c ${MES_PREFIX}/lib/stub/ttyname.c ${MES_PREFIX}/lib/stub/umask.c ${MES_PREFIX}/lib/stub/utime.c ${MES_PREFIX}/lib/${MES_ARCH}-mes-gcc/setjmp.c
 
 # crt1.o
-mes-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crt1.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crt1.c
+tcc-mes -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crt1.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crt1.c
 
-# crtn.o
-mes-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crtn.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crtn.c
+catm ${LIBDIR}/crtn.o
+catm ${LIBDIR}/crti.o
+if match ${ARCH} x86; then
+    # crtn.o
+    tcc-mes -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crtn.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crtn.c
 
-# crti.o
-mes-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crti.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crti.c
+    # crti.o
+    tcc-mes -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crti.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crti.c
+fi
 
 # libc+gcc.a
-mes-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o unified-libc.o unified-libc.c
-mes-tcc -ar cr ${libdir}/libc.a unified-libc.o
+tcc-mes -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o unified-libc.o unified-libc.c
+tcc-mes -ar cr ${LIBDIR}/libc.a unified-libc.o
 
 # libtcc1.a
-mes-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 ${MES_PREFIX}/lib/libtcc1.c
-mes-tcc -ar cr ${libdir}/tcc/libtcc1.a libtcc1.o
+mkdir ${LIBDIR}/tcc
+tcc-mes -c -D HAVE_CONFIG_H=1 -D HAVE_LONG_LONG=1 -D HAVE_FLOAT=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o libtcc1.o ${MES_PREFIX}/lib/libtcc1.c
+if match ${ARCH} riscv64; then
+    tcc-mes -c -D HAVE_CONFIG_H=1 -D HAVE_LONG_LONG=1 -D HAVE_FLOAT=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o lib-arm64.o ../${TCC_PKG}/lib/lib-arm64.c
+    tcc-mes -ar cr ${LIBDIR}/tcc/libtcc1.a libtcc1.o lib-arm64.o
+else
+    tcc-mes -ar cr ${LIBDIR}/tcc/libtcc1.a libtcc1.o
+fi
 
 # libgetopt.a
-# mes-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 ${MES_PREFIX}/lib/posix/getopt.c
-# mes-tcc -ar cr ${libdir}/libgetopt.a getopt.o
+tcc-mes -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} ${MES_PREFIX}/lib/posix/getopt.c
+tcc-mes -ar cr ${LIBDIR}/libgetopt.a getopt.o
 
 # boot0 (ref comments here for all boot*)
 # compile
-mes-tcc \
+tcc-mes \
     -g \
     -v \
     -static \
-    -o boot0-tcc \
+    -o tcc-boot0 \
     -D BOOTSTRAP=1 \
-    -D HAVE_LONG_LONG_STUB=1 \
+    -D HAVE_FLOAT=1 \
+    -D HAVE_BITFIELD=1 \
+    -D HAVE_LONG_LONG=1 \
     -D HAVE_SETJMP=1 \
     -I . \
-    -I ${incdir} \
-    -D TCC_TARGET_I386=1 \
-    -D CONFIG_TCCDIR=\"${libdir}/tcc\" \
-    -D CONFIG_TCC_CRTPREFIX=\"${libdir}\" \
+    -I ${INCDIR} \
+    -D TCC_TARGET_${TCC_TARGET_ARCH}=1 \
+    -D CONFIG_TCCDIR=\"${LIBDIR}/tcc\" \
+    -D CONFIG_TCC_CRTPREFIX=\"${LIBDIR}\" \
     -D CONFIG_TCC_ELFINTERP=\"/mes/loader\" \
-    -D CONFIG_TCC_LIBPATHS=\"${libdir}:${libdir}/tcc\" \
-    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${incdir}\" \
-    -D TCC_LIBGCC=\"${libdir}/libc.a\" \
+    -D CONFIG_TCC_LIBPATHS=\"${LIBDIR}:${LIBDIR}/tcc\" \
+    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${INCDIR}\" \
+    -D TCC_LIBGCC=\"${LIBDIR}/libc.a\" \
     -D TCC_LIBTCC1=\"libtcc1.a\" \
     -D CONFIG_TCCBOOT=1 \
     -D CONFIG_TCC_STATIC=1 \
     -D CONFIG_USE_LIBGCC=1 \
-    -D TCC_MES_LIBC=1 \
     -D TCC_VERSION=\"0.9.26\" \
     -D ONE_SOURCE=1 \
     -L . \
-    -L ${libdir} \
+    -L ${LIBDIR} \
     tcc.c
 # Install
-cp boot0-tcc ${bindir}/
-chmod 755 ${bindir}/boot0-tcc
-# Test boot0
-boot0-tcc -version
+cp tcc-boot0 ${BINDIR}/
+chmod 755 ${BINDIR}/tcc-boot0
 # Recompile libc: crt{1,n,i}, libtcc.a, libc.a
-boot0-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crt1.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crt1.c
-boot0-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crtn.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crtn.c
-boot0-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crti.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crti.c
-# boot0-tcc -c -D HAVE_CONFIG_H=1 -D HAVE_LONG_LONG_STUB=1 -I ${incdir} -I ${incdir}/linux/x86 ${MES_PREFIX}/lib/libtcc1.c
-boot0-tcc -c -D TCC_TARGET_I386=1 lib/libtcc1.c
-boot0-tcc -ar cr ${libdir}/tcc/libtcc1.a libtcc1.o
-boot0-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o unified-libc.o unified-libc.c
-boot0-tcc -ar cr ${libdir}/libc.a unified-libc.o
+tcc-boot0 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crt1.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crt1.c
+if match ${ARCH} x86; then
+    tcc-boot0 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crtn.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crtn.c
+    tcc-boot0 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crti.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crti.c
+fi
+
+tcc-boot0 -c -D HAVE_CONFIG_H=1 -D HAVE_LONG_LONG=1 -D HAVE_FLOAT=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o libtcc1.o ${MES_PREFIX}/lib/libtcc1.c
+if match ${ARCH} riscv64; then
+    tcc-boot0 -c -D HAVE_CONFIG_H=1 -D HAVE_LONG_LONG=1 -D HAVE_FLOAT=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o lib-arm64.o ../${TCC_PKG}/lib/lib-arm64.c
+    tcc-boot0 -ar cr ${LIBDIR}/tcc/libtcc1.a libtcc1.o lib-arm64.o
+else
+    tcc-boot0 -ar cr ${LIBDIR}/tcc/libtcc1.a libtcc1.o
+fi
+
+tcc-boot0 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o unified-libc.o unified-libc.c
+tcc-boot0 -ar cr ${LIBDIR}/libc.a unified-libc.o
+
+# Test boot0
+tcc-boot0 -version
 
 # boot1
-boot0-tcc \
+tcc-boot0 \
     -g \
     -v \
     -static \
-    -o boot1-tcc \
+    -o tcc-boot1 \
     -D BOOTSTRAP=1 \
+    -D HAVE_FLOAT=1 \
     -D HAVE_BITFIELD=1 \
     -D HAVE_LONG_LONG=1 \
     -D HAVE_SETJMP=1 \
     -I . \
-    -I ${incdir} \
-    -D TCC_TARGET_I386=1 \
-    -D CONFIG_TCCDIR=\"${libdir}/tcc\" \
-    -D CONFIG_TCC_CRTPREFIX=\"${libdir}\" \
+    -I ${INCDIR} \
+    -D TCC_TARGET_${TCC_TARGET_ARCH}=1 \
+    -D CONFIG_TCCDIR=\"${LIBDIR}/tcc\" \
+    -D CONFIG_TCC_CRTPREFIX=\"${LIBDIR}\" \
     -D CONFIG_TCC_ELFINTERP=\"/mes/loader\" \
-    -D CONFIG_TCC_LIBPATHS=\"${libdir}:${libdir}/tcc\" \
-    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${incdir}\" \
-    -D TCC_LIBGCC=\"${libdir}/libc.a\" \
+    -D CONFIG_TCC_LIBPATHS=\"${LIBDIR}:${LIBDIR}/tcc\" \
+    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${INCDIR}\" \
+    -D TCC_LIBGCC=\"${LIBDIR}/libc.a\" \
     -D TCC_LIBTCC1=\"libtcc1.a\" \
     -D CONFIG_TCCBOOT=1 \
     -D CONFIG_TCC_STATIC=1 \
     -D CONFIG_USE_LIBGCC=1 \
-    -D TCC_MES_LIBC=1 \
     -D TCC_VERSION=\"0.9.26\" \
     -D ONE_SOURCE=1 \
     -L . \
     tcc.c
-cp boot1-tcc ${bindir}
-chmod 755 ${bindir}/boot1-tcc
-boot1-tcc -version
-boot1-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crt1.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crt1.c
-boot1-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crtn.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crtn.c
-boot1-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crti.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crti.c
-# boot1-tcc -c -D HAVE_CONFIG_H=1 -D HAVE_LONG_LONG=1 -I ${incdir} -I ${incdir}/linux/x86 ${MES_PREFIX}/lib/libtcc1.c
-boot1-tcc -c -D TCC_TARGET_I386=1 lib/libtcc1.c
-boot1-tcc -ar cr ${libdir}/tcc/libtcc1.a libtcc1.o
-boot1-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o unified-libc.o unified-libc.c
-boot1-tcc -ar cr ${libdir}/libc.a unified-libc.o
+cp tcc-boot1 ${BINDIR}
+chmod 755 ${BINDIR}/tcc-boot1
+tcc-boot1 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crt1.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crt1.c
+if match ${ARCH} x86; then
+    tcc-boot1 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crtn.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crtn.c
+    tcc-boot1 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crti.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crti.c
+fi
+
+tcc-boot1 -c -D HAVE_CONFIG_H=1 -D HAVE_LONG_LONG=1 -D HAVE_FLOAT=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o libtcc1.o ${MES_PREFIX}/lib/libtcc1.c
+if match ${ARCH} riscv64; then
+    tcc-boot1 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o lib-arm64.o ../${TCC_PKG}/lib/lib-arm64.c
+    tcc-boot1 -ar cr ${LIBDIR}/tcc/libtcc1.a libtcc1.o lib-arm64.o
+else
+    tcc-boot1 -ar cr ${LIBDIR}/tcc/libtcc1.a libtcc1.o
+fi
+
+tcc-boot1 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o unified-libc.o unified-libc.c
+tcc-boot1 -ar cr ${LIBDIR}/libc.a unified-libc.o
+
+# Test boot1
+tcc-boot1 -version
 
 # boot2
-boot1-tcc \
+tcc-boot1 \
     -g \
     -v \
     -static \
-    -o boot2-tcc \
-    -D BOOTSTRAP=1 \
-    -D HAVE_BITFIELD=1 \
-    -D HAVE_FLOAT_STUB=1 \
-    -D HAVE_LONG_LONG=1 \
-    -D HAVE_SETJMP=1 \
-    -I . \
-    -I ${incdir} \
-    -D TCC_TARGET_I386=1 \
-    -D CONFIG_TCCDIR=\"${libdir}/tcc\" \
-    -D CONFIG_TCC_CRTPREFIX=\"${libdir}\" \
-    -D CONFIG_TCC_ELFINTERP=\"/mes/loader\" \
-    -D CONFIG_TCC_LIBPATHS=\"${libdir}:${libdir}/tcc\" \
-    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${incdir}\" \
-    -D TCC_LIBGCC=\"${libdir}/libc.a\" \
-    -D TCC_LIBTCC1=\"libtcc1.a\" \
-    -D CONFIG_TCCBOOT=1 \
-    -D CONFIG_TCC_STATIC=1 \
-    -D CONFIG_USE_LIBGCC=1 \
-    -D TCC_MES_LIBC=1 \
-    -D TCC_VERSION=\"0.9.26\" \
-    -D ONE_SOURCE=1 \
-    -L . \
-    tcc.c
-cp boot2-tcc ${bindir}
-chmod 755 ${bindir}/boot2-tcc
-boot2-tcc -version
-boot2-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crt1.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crt1.c
-boot2-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crtn.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crtn.c
-boot2-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crti.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crti.c
-# boot2-tcc -c -D HAVE_CONFIG_H=1 -D HAVE_FLOAT_STUB=1 -D HAVE_LONG_LONG=1 -I ${incdir} -I ${incdir}/linux/x86 ${MES_PREFIX}/lib/libtcc1.c
-boot2-tcc -c -D TCC_TARGET_I386=1 lib/libtcc1.c
-boot2-tcc -ar cr ${libdir}/tcc/libtcc1.a libtcc1.o
-boot2-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o unified-libc.o unified-libc.c
-boot2-tcc -ar cr ${libdir}/libc.a unified-libc.o
-
-# boot3
-boot2-tcc \
-    -g \
-    -v \
-    -static \
-    -o boot3-tcc \
+    -o tcc-boot2 \
     -D BOOTSTRAP=1 \
     -D HAVE_BITFIELD=1 \
     -D HAVE_FLOAT=1 \
     -D HAVE_LONG_LONG=1 \
     -D HAVE_SETJMP=1 \
     -I . \
-    -I ${incdir} \
-    -D TCC_TARGET_I386=1 \
-    -D CONFIG_TCCDIR=\"${libdir}/tcc\" \
-    -D CONFIG_TCC_CRTPREFIX=\"${libdir}\" \
+    -I ${INCDIR} \
+    -D TCC_TARGET_${TCC_TARGET_ARCH}=1 \
+    -D CONFIG_TCCDIR=\"${LIBDIR}/tcc\" \
+    -D CONFIG_TCC_CRTPREFIX=\"${LIBDIR}\" \
     -D CONFIG_TCC_ELFINTERP=\"/mes/loader\" \
-    -D CONFIG_TCC_LIBPATHS=\"${libdir}:${libdir}/tcc\" \
-    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${incdir}\" \
-    -D TCC_LIBGCC=\"${libdir}/libc.a\" \
+    -D CONFIG_TCC_LIBPATHS=\"${LIBDIR}:${LIBDIR}/tcc\" \
+    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${INCDIR}\" \
+    -D TCC_LIBGCC=\"${LIBDIR}/libc.a\" \
     -D TCC_LIBTCC1=\"libtcc1.a\" \
     -D CONFIG_TCCBOOT=1 \
     -D CONFIG_TCC_STATIC=1 \
     -D CONFIG_USE_LIBGCC=1 \
-    -D TCC_MES_LIBC=1 \
     -D TCC_VERSION=\"0.9.26\" \
     -D ONE_SOURCE=1 \
     -L . \
     tcc.c
-cp boot3-tcc ${bindir}
-chmod 755 ${bindir}/boot3-tcc
-boot3-tcc -version
-boot3-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crt1.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crt1.c
-boot3-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crtn.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crtn.c
-boot3-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crti.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crti.c
-# boot3-tcc -c -D HAVE_CONFIG_H=1 -D HAVE_FLOAT=1 -D HAVE_LONG_LONG=1 -I ${incdir} -I ${incdir}/linux/x86 ${MES_PREFIX}/lib/libtcc1.c
-boot3-tcc -c -D TCC_TARGET_I386=1 lib/libtcc1.c
-boot3-tcc -ar cr ${libdir}/tcc/libtcc1.a libtcc1.o
-boot3-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o unified-libc.o unified-libc.c
-boot3-tcc -ar cr ${libdir}/libc.a unified-libc.o
+cp tcc-boot2 ${BINDIR}
+chmod 755 ${BINDIR}/tcc-boot2
+tcc-boot2 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crt1.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crt1.c
+if match ${ARCH} x86; then
+    tcc-boot2 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crtn.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crtn.c
+    tcc-boot2 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o ${LIBDIR}/crti.o ${MES_PREFIX}/lib/linux/${MES_ARCH}-mes-gcc/crti.c
+fi
 
-# boot4
-boot3-tcc \
-    -g \
-    -v \
-    -static \
-    -o boot4-tcc \
-    -D BOOTSTRAP=1 \
-    -D HAVE_BITFIELD=1 \
-    -D HAVE_FLOAT=1 \
-    -D HAVE_LONG_LONG=1 \
-    -D HAVE_SETJMP=1 \
-    -I . \
-    -I ${incdir} \
-    -D TCC_TARGET_I386=1 \
-    -D CONFIG_TCCDIR=\"${libdir}/tcc\" \
-    -D CONFIG_TCC_CRTPREFIX=\"${libdir}\" \
-    -D CONFIG_TCC_ELFINTERP=\"/mes/loader\" \
-    -D CONFIG_TCC_LIBPATHS=\"${libdir}:${libdir}/tcc\" \
-    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${incdir}\" \
-    -D TCC_LIBGCC=\"${libdir}/libc.a\" \
-    -D TCC_LIBTCC1=\"libtcc1.a\" \
-    -D CONFIG_TCCBOOT=1 \
-    -D CONFIG_TCC_STATIC=1 \
-    -D CONFIG_USE_LIBGCC=1 \
-    -D TCC_MES_LIBC=1 \
-    -D TCC_VERSION=\"0.9.26\" \
-    -D ONE_SOURCE=1 \
-    -L . \
-    tcc.c
-cp boot4-tcc ${bindir}
-chmod 755 ${bindir}/boot4-tcc
-boot4-tcc -version
-boot4-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crt1.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crt1.c
-boot4-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crtn.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crtn.c
-boot4-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crti.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crti.c
-# boot4-tcc -c -D HAVE_CONFIG_H=1 -D HAVE_FLOAT=1 -D HAVE_LONG_LONG=1 -I ${incdir} -I ${incdir}/linux/x86 ${MES_PREFIX}/lib/libtcc1.c
-boot4-tcc -c -D TCC_TARGET_I386=1 lib/libtcc1.c
-boot4-tcc -ar cr ${libdir}/tcc/libtcc1.a libtcc1.o
-boot4-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o unified-libc.o unified-libc.c
-boot4-tcc -ar cr ${libdir}/libc.a unified-libc.o
+tcc-boot2 -c -D HAVE_CONFIG_H=1 -D HAVE_LONG_LONG=1 -D HAVE_FLOAT=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o libtcc1.o ${MES_PREFIX}/lib/libtcc1.c
+if match ${ARCH} riscv64; then
+    tcc-boot2 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o lib-arm64.o ../${TCC_PKG}/lib/lib-arm64.c
+    tcc-boot2 -ar cr ${LIBDIR}/tcc/libtcc1.a libtcc1.o lib-arm64.o
+else
+    tcc-boot2 -ar cr ${LIBDIR}/tcc/libtcc1.a libtcc1.o
+fi
 
-# boot5
-boot4-tcc \
-    -g \
-    -v \
-    -static \
-    -o boot5-tcc \
-    -D BOOTSTRAP=1 \
-    -D HAVE_BITFIELD=1 \
-    -D HAVE_FLOAT=1 \
-    -D HAVE_LONG_LONG=1 \
-    -D HAVE_SETJMP=1 \
-    -I . \
-    -I ${incdir} \
-    -D TCC_TARGET_I386=1 \
-    -D CONFIG_TCCDIR=\"${libdir}/tcc\" \
-    -D CONFIG_TCC_CRTPREFIX=\"${libdir}\" \
-    -D CONFIG_TCC_ELFINTERP=\"/mes/loader\" \
-    -D CONFIG_TCC_LIBPATHS=\"${libdir}:${libdir}/tcc\" \
-    -D CONFIG_TCC_SYSINCLUDEPATHS=\"${incdir}\" \
-    -D TCC_LIBGCC=\"${libdir}/libc.a\" \
-    -D TCC_LIBTCC1=\"libtcc1.a\" \
-    -D CONFIG_TCCBOOT=1 \
-    -D CONFIG_TCC_STATIC=1 \
-    -D CONFIG_USE_LIBGCC=1 \
-    -D TCC_MES_LIBC=1 \
-    -D TCC_VERSION=\"0.9.26\" \
-    -D ONE_SOURCE=1 \
-    -L . \
-    tcc.c
-cp boot5-tcc ${bindir}
-chmod 755 ${bindir}/boot5-tcc
-boot5-tcc -version
-boot5-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crt1.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crt1.c
-boot5-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crtn.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crtn.c
-boot5-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o ${libdir}/crti.o ${MES_PREFIX}/lib/linux/x86-mes-gcc/crti.c
-# boot5-tcc -c -D HAVE_CONFIG_H=1 -D HAVE_FLOAT=1 -D HAVE_LONG_LONG=1 -I ${incdir} -I ${incdir}/linux/x86 ${MES_PREFIX}/lib/libtcc1.c
-boot5-tcc -c -D TCC_TARGET_I386=1 lib/libtcc1.c
-boot5-tcc -ar cr ${libdir}/tcc/libtcc1.a libtcc1.o
-boot5-tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86 -o unified-libc.o unified-libc.c
-boot5-tcc -ar cr ${libdir}/libc.a unified-libc.o
+tcc-boot2 -c -D HAVE_CONFIG_H=1 -I ${INCDIR} -I ${INCDIR}/linux/${MES_ARCH} -o unified-libc.o unified-libc.c
+tcc-boot2 -ar cr ${LIBDIR}/libc.a unified-libc.o
+
+# Test boot2
+tcc-boot2 -version
 
 # We have our final tcc 0.9.26!
-cp ${bindir}/boot5-tcc ${bindir}/tcc
-chmod 755 ${bindir}/tcc
+cp ${BINDIR}/tcc-boot2 ${BINDIR}/tcc
+chmod 755 ${BINDIR}/tcc
+rm ${BINDIR}/tcc-boot2
 
 # Also recompile getopt, we don't need to do this during the boot* stages
 # because nothing is linked against it
-# tcc -c -D HAVE_CONFIG_H=1 -I ${incdir} -I ${incdir}/linux/x86  ${MES_PREFIX}/lib/posix/getopt.c
-# tcc -ar cr ${libdir}/libgetopt.a getopt.o
+# tcc -c -D HAVE_CONFIG_H=1 -I include -I include/linux/${MES_ARCH} lib/posix/getopt.c
+# tcc -ar cr ${LIBDIR}/libgetopt.a getopt.o
 
 # Checksums
     sha256sum \
-        ${bindir}/mes-tcc \
-        ${bindir}/boot0-tcc \
-        ${bindir}/boot1-tcc \
-        ${bindir}/boot2-tcc \
-        ${bindir}/boot3-tcc \
-        ${bindir}/boot4-tcc \
-        ${bindir}/tcc \
-        ${libdir}/libc.a \
-        ${libdir}/crt1.o \
-        ${libdir}/crti.o \
-        ${libdir}/crtn.o \
-        ${libdir}/tcc/libtcc1.a
+        ${BINDIR}/tcc-mes \
+        ${BINDIR}/tcc-boot0 \
+        ${BINDIR}/tcc-boot1 \
+        ${BINDIR}/tcc \
+        ${LIBDIR}/libc.a \
+        ${LIBDIR}/crt1.o \
+        ${LIBDIR}/crti.o \
+        ${LIBDIR}/crtn.o \
+        ${LIBDIR}/tcc/libtcc1.a

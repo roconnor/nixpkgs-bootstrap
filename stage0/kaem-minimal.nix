@@ -14,7 +14,7 @@ lib.fixDerivation (final:
 
   outputHashMode = "recursive";
   outputHashAlgo = "sha256";
-  outputHash = "lCJQahg9TY52XYCUQEXuKMrTwPJTwFdsJUfL11oUTbg=";
+  outputHash = "DriflFU5fy8R6Rm0m1b31Vl98q855+Gt/Sv+r5ubGNM=";
     
   allowedReferences = [];
 })

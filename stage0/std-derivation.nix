@@ -23,6 +23,7 @@ in {
   PATH = lib.mkPath "bin" (final.buildInputs ++ [ stage0 ]);
   LIBRARY_PATH = lib.mkPath "lib" final.buildInputs;
   C_INCLUDE_PATH = lib.mkPath "include" final.buildInputs;
+  M2LIBC_PATH = ./M2libc;
 
   passAsFile = [ "buildCommand" "unpackPhase" "patchPhase" "configurePhase" "buildPhase" "installPhase" ];
 

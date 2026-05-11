@@ -9,7 +9,8 @@ in lib.fix
   kaem-minimal = callPackage stage0/kaem-minimal.nix { };
   stage0 = callPackage ./stage0 { hex0 = hex0-seed; };
   stage0env = callPackage ./stage0/std-derivation.nix {};
-  mes = callPackage ./mes/0.24.2.nix {};
+  simple-patch = callPackage ./simple-patch/1.0.nix {};
+  mes = callPackage ./mes/0.27.1.nix {};
   "tcc-0.9.26" = callPackage ./tinycc/0.9.26.nix {};
   tcc-mes = callPackage ./tinycc/0.9.27-pass1.nix { CC = "${final."tcc-0.9.26"}/bin/tcc"; };
   libgetopt = callPackage ./libgetopt { tcc = tcc-mes; };

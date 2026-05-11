@@ -138,6 +138,7 @@ let ARCH="x86";
 	${M2-Planet/cc_reader.c} \
 	${M2-Planet/cc_strings.c} \
 	${M2-Planet/cc_types.c} \
+	${M2-Planet/cc_emit.c} \
 	${M2-Planet/cc_core.c} \
 	${M2-Planet/cc_macro.c} \
 	${M2-Planet/cc.c}
@@ -186,11 +187,14 @@ let ARCH="x86";
     M2 --architecture ${ARCH} \
 	-f ${M2libc/sys/types.h} \
 	-f ${M2libc/stddef.h} \
+	-f ${M2libc/sys/utsname.h} \
 	-f ${M2libc/${ARCH}/linux/unistd.c} \
 	-f ${M2libc/${ARCH}/linux/fcntl.c} \
 	-f ${M2libc/fcntl.c} \
 	-f ${M2libc/${ARCH}/linux/sys/stat.c} \
+	-f ${M2libc/ctype.c} \
 	-f ${M2libc/stdlib.c} \
+	-f ${M2libc/stdarg.h} \
 	-f ${M2libc/stdio.h} \
 	-f ${M2libc/stdio.c} \
 	-f ${M2libc/bootstrappable.c} \
@@ -221,10 +225,13 @@ let ARCH="x86";
     M2 --architecture ${ARCH} \
 	-f ${M2libc/sys/types.h} \
 	-f ${M2libc/stddef.h} \
+	-f ${M2libc/sys/utsname.h} \
 	-f ${M2libc/${ARCH}/linux/fcntl.c} \
 	-f ${M2libc/fcntl.c} \
 	-f ${M2libc/${ARCH}/linux/unistd.c} \
+	-f ${M2libc/stdarg.h} \
 	-f ${M2libc/string.c} \
+	-f ${M2libc/ctype.c} \
 	-f ${M2libc/stdlib.c} \
 	-f ${M2libc/stdio.h} \
 	-f ${M2libc/stdio.c} \
@@ -257,11 +264,14 @@ let ARCH="x86";
     M2 --architecture ${ARCH} \
 	-f ${M2libc/sys/types.h} \
 	-f ${M2libc/stddef.h} \
+	-f ${M2libc/sys/utsname.h} \
 	-f ${M2libc/${ARCH}/linux/unistd.c} \
 	-f ${M2libc/${ARCH}/linux/fcntl.c} \
 	-f ${M2libc/fcntl.c} \
 	-f ${M2libc/${ARCH}/linux/sys/stat.c} \
+	-f ${M2libc/ctype.c} \
 	-f ${M2libc/stdlib.c} \
+	-f ${M2libc/stdarg.h} \
 	-f ${M2libc/stdio.h} \
 	-f ${M2libc/stdio.c} \
 	-f ${M2libc/bootstrappable.c} \
@@ -295,11 +305,14 @@ let ARCH="x86";
     M2 --architecture ${ARCH} \
 	-f ${M2libc/sys/types.h} \
 	-f ${M2libc/stddef.h} \
-	-f ${M2libc/string.c} \
+	-f ${M2libc/sys/utsname.h} \
 	-f ${M2libc/${ARCH}/linux/unistd.c} \
 	-f ${M2libc/${ARCH}/linux/fcntl.c} \
 	-f ${M2libc/fcntl.c} \
+	-f ${M2libc/ctype.c} \
 	-f ${M2libc/stdlib.c} \
+	-f ${M2libc/stdarg.h} \
+	-f ${M2libc/string.c} \
 	-f ${M2libc/stdio.h} \
 	-f ${M2libc/stdio.c} \
 	-f ${M2libc/bootstrappable.c} \
@@ -364,9 +377,12 @@ let ARCH="x86";
 	-f ${M2libc/stddef.h} \
 	-f ${M2libc/${ARCH}/linux/fcntl.c} \
 	-f ${M2libc/fcntl.c} \
+	-f ${M2libc/sys/utsname.h} \
 	-f ${M2libc/${ARCH}/linux/unistd.c} \
 	-f ${M2libc/${ARCH}/linux/sys/stat.c} \
+	-f ${M2libc/ctype.c} \
 	-f ${M2libc/stdlib.c} \
+	-f ${M2libc/stdarg.h} \
 	-f ${M2libc/stdio.h} \
 	-f ${M2libc/stdio.c} \
 	-f ${M2libc/string.c} \
@@ -408,8 +424,11 @@ let ARCH="x86";
 	-f ${M2libc/stddef.h} \
 	-f ${M2libc/${ARCH}/linux/fcntl.c} \
 	-f ${M2libc/fcntl.c} \
+	-f ${M2libc/sys/utsname.h} \
 	-f ${M2libc/${ARCH}/linux/unistd.c} \
+	-f ${M2libc/ctype.c} \
 	-f ${M2libc/stdlib.c} \
+	-f ${M2libc/stdarg.h} \
 	-f ${M2libc/stdio.h} \
 	-f ${M2libc/stdio.c} \
 	-f ${M2libc/bootstrappable.c} \
@@ -441,10 +460,13 @@ let ARCH="x86";
     ./M2 --architecture ${ARCH} \
 	-f ${M2libc/sys/types.h} \
 	-f ${M2libc/stddef.h} \
+	-f ${M2libc/sys/utsname.h} \
 	-f ${M2libc/${ARCH}/linux/unistd.c} \
 	-f ${M2libc/${ARCH}/linux/fcntl.c} \
 	-f ${M2libc/fcntl.c} \
+	-f ${M2libc/ctype.c} \
 	-f ${M2libc/stdlib.c} \
+	-f ${M2libc/stdarg.h} \
 	-f ${M2libc/stdio.h} \
 	-f ${M2libc/stdio.c} \
 	-f ${M2libc/bootstrappable.c} \
@@ -476,10 +498,13 @@ let ARCH="x86";
     ./M2 --architecture ${ARCH} \
 	-f ${M2libc/sys/types.h} \
 	-f ${M2libc/stddef.h} \
+	-f ${M2libc/sys/utsname.h} \
 	-f ${M2libc/${ARCH}/linux/unistd.c} \
 	-f ${M2libc/${ARCH}/linux/fcntl.c} \
 	-f ${M2libc/fcntl.c} \
+	-f ${M2libc/ctype.c} \
 	-f ${M2libc/stdlib.c} \
+	-f ${M2libc/stdarg.h} \
 	-f ${M2libc/stdio.h} \
 	-f ${M2libc/stdio.c} \
 	-f ${M2libc/bootstrappable.c} \
@@ -488,6 +513,7 @@ let ARCH="x86";
 	-f ${M2-Planet/cc_reader.c} \
 	-f ${M2-Planet/cc_strings.c} \
 	-f ${M2-Planet/cc_types.c} \
+	-f ${M2-Planet/cc_emit.c} \
 	-f ${M2-Planet/cc_core.c} \
 	-f ${M2-Planet/cc_macro.c} \
 	-f ${M2-Planet/cc.c} \
@@ -607,7 +633,7 @@ in lib.fixDerivation (final:
     
   outputHashMode = "recursive";
   outputHashAlgo = "sha256";
-#  outputHash = "d6Aa2/CxUhu29ZA+W0lodZfudfCFwf7rgSaTTm8yHe4=";
+#  outputHash = "UAZB24anIivJFkzTmfayrPuuLLG+0nJAVBDzgbLlnS8=";
     
   allowedReferences = [];
 })

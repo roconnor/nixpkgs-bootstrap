@@ -34,7 +34,7 @@ stage0env.override (final: prev: with final;
     catm config.h
     catm include/version.h
     catm include/pipesize.h
-    rm y.tab.c y.tab.h
+    rm y.tab.c y.tab.h parser-built
   '';
 
   buildPhase = ''
