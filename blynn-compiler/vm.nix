@@ -19,11 +19,14 @@ in {
     M2-Planet --architecture ${ARCH} \
       -f ${../stage0/M2libc/sys/types.h} \
       -f ${../stage0/M2libc/stddef.h} \
+      -f ${../stage0/M2libc/sys/utsname.h} \
       -f ${../stage0/M2libc/${ARCH}/linux/unistd.c} \
       -f ${../stage0/M2libc/${ARCH}/linux/fcntl.c} \
       -f ${../stage0/M2libc/fcntl.c} \
       -f ${../stage0/M2libc/${ARCH}/linux/sys/stat.c} \
+      -f ${../stage0/M2libc/ctype.c} \
       -f ${../stage0/M2libc/stdlib.c} \
+      -f ${../stage0/M2libc/stdarg.h} \
       -f ${../stage0/M2libc/stdio.h} \
       -f ${../stage0/M2libc/stdio.c} \
       -f ${../stage0/M2libc/bootstrappable.c} \
